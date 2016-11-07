@@ -1,0 +1,48 @@
+<html>
+
+<head>
+    <title>Red Mud World Builder v2</title>
+    <link rel="stylesheet" type="text/css" href="styles/AreaManager.css" />
+    <script src="/bower_components/angular/angular.js"></script>
+</head>
+
+<body ng-app="RedMudWorldBuilderV2">
+    <div id="AreaManager" ng-controller="AreaManagerControler">
+        <div>
+            <label for="activeArea">Active Area:</label>
+            <select id="activeArea" ng-model="areaManager.current" ng-options="(area.areacode + ' - ' + area.description.substr(0,50)) for area in areas track by area.areacode" ng-change="newArea = false; updateAreaManagementForm();"></select>
+            <button ng-click="setFormForNewArea();">New</button>
+        </div>
+        <form ng-if="areaManager.current != null || newArea">
+            <table class="area_widget">
+                <th colspan="2">Area Widget</th>
+                <tr>
+                    <td class="aw_label"><label>Areacode</label></td>
+                    <td><input type="text" name="areacode" ng-model="areaManager.form.areacode" ng-readonly="!newArea" /></td>
+                </tr>
+                <tr>
+                    <td class="aw_label"><label>Name</label></td>
+                    <td><input type="text" name="name" ng-model="areaManager.form.name" /></td>
+                </tr>
+                <tr>
+                    <td class="aw_label"><label>Description</label></td>
+                    <td><input class="aw_description" type="text" name="description" ng-model="areaManager.form.description" /></td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <button ng-if="areaManager.current != null && !newArea" ng-click="resetActiveArea();">Reset</button>
+                        <button ng-if="newArea" ng-click="addNewArea();">Add</button>
+                        <button ng-if="areaManager.current != null && !newArea" ng-click="saveAreaChange();">Save</button>
+                        <button ng-if="areaManager.current != null && !newArea" ng-click="deleteArea();">Delete</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+    <script>
+        var app = angular.module('RedMudWorldBuilderV2', []);
+    </script>
+    <script src="controllers/AreaManagerController.js"></script>
+</body>
+
+</html>

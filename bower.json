@@ -1,0 +1,21 @@
+{
+    "name": "redmudbuilderproto",
+    "description": "A prototype RedMUD builder app in AngularJS.",
+    "main": "index.html",
+    "authors": [
+        "Jeff Yurkiw"
+    ],
+    "license": "MIT",
+    "homepage": "index.html",
+    "private": true,
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "tests"
+    ],
+    "dependencies": {
+        "angular": "angularjs#^1.5.8"
+    }
+}

@@ -1,0 +1,18 @@
+div#AreaManager {
+    width: 30%;
+}
+
+table.area_widget {
+    border: 1px solid black;
+    border-radius: 25px;
+    margin-top: 5px;
+    padding: 0px 5px 5px 5px;
+}
+
+.aw_label {
+    width: 1%;
+}
+
+.aw_description {
+    width: 100%;
+}
