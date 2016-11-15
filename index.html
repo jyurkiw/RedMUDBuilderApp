@@ -10,7 +10,7 @@
     <div id="AreaManager" ng-controller="BuilderManagerControler">
         <div>
             <label for="activeArea">Active Area:</label>
-            <select id="activeArea" ng-model="areaManager.current" ng-options="(area.areacode + ' - ' + area.description.substr(0,50)) for area in areas track by area.areacode" ng-change="onAreaChange();"></select>
+            <select id="activeArea" ng-model="areaManager.current" ng-options="(area.areacode + ' - ' + area.description.substr(0,50)) for area in areas track by area.areacode" ng-change="onAreaChange().then(onRoomChange);"></select>
             <button ng-click="setFormForNewArea(); setFormForNewRoom();">New</button>
         </div>
         <form ng-if="areaManager.current != null || newArea">

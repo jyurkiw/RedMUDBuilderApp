@@ -1,5 +1,6 @@
 app.controller('BuilderManagerControler', function($scope, $http, RoomAPI) {
     $scope.areas = [];
+    $scope.areaLookup = {};
     $scope.areaManager = {
         current: null,
         form: {}
@@ -12,18 +13,33 @@ app.controller('BuilderManagerControler', function($scope, $http, RoomAPI) {
     $scope.newArea = false;
 
     $scope.onAreaChange = function(getRoom) {
-        getRoom = !(getRoom === null || !getRoom);
+        return new Promise(function(resolve, reject) {
+            getRoom = !(getRoom === null || !getRoom);
 
-        newArea = false;
-        updateAreaManagementForm();
-        RoomAPI.getRoom($scope.areaManager.current.areacode, 1)
-            .then(function(getRoomResponse) {
-                $scope.roomManager.current = getRoomResponse.data;
-            })
-            .then(function() {
-                updateRoomManagementForm();
-            });
+            newArea = false;
+            updateAreaManagementForm();
+            resolve();
+        });
     };
+
+    $scope.onRoomChange = function(roomnumber) {
+        return new Promise(function(resolve, reject) {
+            if (typeof(roomnumber) === 'undefined' || roomnumber === null) {
+                roomnumber = 1;
+            }
+
+            RoomAPI.getRoom($scope.areaManager.current.areacode, roomnumber)
+                .then(function(getRoomResponse) {
+                    $scope.roomManager.current = getRoomResponse.data;
+                })
+                .then(function() {
+                    updateRoomManagementForm();
+                })
+                .then(function() {
+                    resolve();
+                });
+        });
+    }
 
     function updateAreaManagementForm() {
         $scope.areaManager.form.areacode = $scope.areaManager.current.areacode;
@@ -104,8 +120,18 @@ app.controller('BuilderManagerControler', function($scope, $http, RoomAPI) {
         // TODO: Add new room logic
     };
 
-    $scope.goToRoom = function goToRoom(room) {
-        console.log(room);
+    $scope.goToRoom = function goToRoom(roomcode) {
+        var pRoomcode = RoomAPI.parseRoomCode(roomcode);
+
+        if (pRoomcode.areacode != $scope.areaManager.current.areacode) {
+            $scope.areaManager.current = $scope.areaLookup[pRoomcode.areacode];
+            $scope.onAreaChange()
+                .then(function() {
+                    $scope.onRoomChange(pRoomcode.roomnumber);
+                });
+        } else {
+            $scope.onRoomChange(pRoomcode.roomnumber);
+        }
     };
 
     $scope.saveAreaChange = function saveAreaChange() {
@@ -149,6 +175,7 @@ app.controller('BuilderManagerControler', function($scope, $http, RoomAPI) {
     // Initial setup functions
     var addAreaToScope = function addAreaToScope(areaRes) {
         $scope.areas.push(areaRes.data);
+        $scope.areaLookup[areaRes.data.areacode] = areaRes.data;
     };
 
     var addAreaListToScope = function addAreaListToScope(areaListRes) {
