@@ -1,21 +1,54 @@
-app.controller('AreaManagerControler', function($scope, $http) {
+app.controller('BuilderManagerControler', function($scope, $http, RoomAPI) {
     $scope.areas = [];
     $scope.areaManager = {
         current: null,
         form: {}
     };
+    $scope.roomManager = {
+        current: null,
+        form: {},
+        nameLookup: {}
+    };
     $scope.newArea = false;
 
-    function review() {
-        console.log($scope.areaManager);
-        console.log($scope.areas.find(function(e) { return e.areacode == $scope.areaManager.form.areacode; }));
-    }
+    $scope.onAreaChange = function(getRoom) {
+        getRoom = !(getRoom === null || !getRoom);
 
-    $scope.updateAreaManagementForm = function updateAreaManagementForm() {
+        newArea = false;
+        updateAreaManagementForm();
+        RoomAPI.getRoom($scope.areaManager.current.areacode, 1)
+            .then(function(getRoomResponse) {
+                $scope.roomManager.current = getRoomResponse.data;
+            })
+            .then(function() {
+                updateRoomManagementForm();
+            });
+    };
+
+    function updateAreaManagementForm() {
         $scope.areaManager.form.areacode = $scope.areaManager.current.areacode;
         $scope.areaManager.form.name = $scope.areaManager.current.name;
         $scope.areaManager.form.description = $scope.areaManager.current.description;
-    };
+    }
+
+    function updateRoomManagementForm() {
+        $scope.roomManager.form.roomnumber = $scope.roomManager.current.roomnumber;
+        $scope.roomManager.form.name = $scope.roomManager.current.name;
+        $scope.roomManager.form.description = $scope.roomManager.current.description;
+
+        var exitDict = {};
+        for (var command in $scope.roomManager.current.exits) {
+            var roomcode = $scope.roomManager.current.exits[command];
+            var parsedExitData = RoomAPI.parseRoomCode(roomcode);
+
+            exitDict[command] = {
+                areacode: parsedExitData.areacode,
+                roomcode: roomcode,
+                name: $scope.roomManager.nameLookup[parsedExitData.areacode][roomcode]
+            };
+        }
+        $scope.roomManager.form.exits = exitDict;
+    }
 
     $scope.resetActiveArea = function resetActiveArea() {
         $scope.areaManager.form.name = $scope.areaManager.current.name;
@@ -28,6 +61,16 @@ app.controller('AreaManagerControler', function($scope, $http) {
             form: {}
         };
         $scope.newArea = true;
+    };
+
+    $scope.setFormForNewRoom = function setFormForNewRoom() {
+        $scope.roomManager = {
+            current: null,
+            form: {
+                roomnumber: 1
+            },
+            nameLookup: $scope.roomManager.nameLookup
+        };
     };
 
     $scope.addNewArea = function addNewArea() {
@@ -43,6 +86,26 @@ app.controller('AreaManagerControler', function($scope, $http) {
                 function(err) {
                     console.log(err);
                 });
+    };
+
+    $scope.addNewExit = function addNewExit() {
+        var newExit = {
+            areacode: $scope.roomManager.form.newExitArea,
+            roomcode: $scope.roomManager.form.newExitRoom,
+            name: $scope.roomManager.nameLookup[$scope.roomManager.form.newExitArea][$scope.roomManager.form.newExitRoom]
+        };
+        $scope.roomManager.form.exits[$scope.roomManager.form.newExitCommand] = newExit;
+
+        $scope.roomManager.form.newExitCommand = null;
+        $scope.roomManager.form.newExitArea = null;
+        $scope.roomManager.form.newExitRoom = null;
+
+        // TODO: Add exit to DB and curate local data sets
+        // TODO: Add new room logic
+    };
+
+    $scope.goToRoom = function goToRoom(room) {
+        console.log(room);
     };
 
     $scope.saveAreaChange = function saveAreaChange() {
@@ -97,6 +160,11 @@ app.controller('AreaManagerControler', function($scope, $http) {
         }
     };
 
+    var addRoomLookupTableToScope = function addRoomLookupTableToScope(res) {
+        $scope.roomManager.nameLookup = res.data;
+    };
+
     // Initialize the controller.
     $http.get('http://localhost:8080/api/areas').then(addAreaListToScope);
+    $http.get('http://localhost:8080/api/rooms/exits/lookup').then(addRoomLookupTableToScope);
 });
