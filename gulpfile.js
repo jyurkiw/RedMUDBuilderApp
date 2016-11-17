@@ -9,3 +9,12 @@ gulp.task('serve', function() {
             open: true
         }));
 });
+
+gulp.task('serve-no-reload', function() {
+    gulp.src('.')
+        .pipe(server({
+            livereload: false,
+            directoryListing: true,
+            open: true
+        }));
+});
