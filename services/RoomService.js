@@ -26,6 +26,24 @@ angular.module('RoomService', [])
             return $http.get('http://localhost:8080/api/room/' + areacode + '/' + roomnumber);
         }
 
+        function postRoom(room) {
+            return $http.post('http://localhost:8080/api/room', room);
+        }
+
+        function connectToExistingRoom(command, source, destination) {
+            console.log(command + ' ' + source + ' ' + destination);
+            if (command === undefined) {
+                console.log("Need defined command");
+                throw "Need defined command";
+            } else {
+                return $http.post('http://localhost:8080/api/room/exit', { command: command, source: source, destination: destination });
+            }
+        }
+
+        function disconnectFromRoom(command, areacode, roomnumber) {
+            return $http.delete('http://localhost:8080/api/room/exit/' + areacode + '/' + roomnumber + '/' + command);
+        }
+
         /**
          * Get a room name lookup table from the api for the passed areacode.
          * 
@@ -68,9 +86,25 @@ angular.module('RoomService', [])
             }
         }
 
+        /**
+         * Build a room code.
+         * 
+         * @param {any} areacode An area code.
+         * @param {any} roomnumber A room number.
+         * @returns A room code.
+         */
+        function buildRoomCode(areacode, roomnumber) {
+            return 'RM:' + areacode + ':' + roomnumber;
+        }
+
         return {
+            buildRoomCode: buildRoomCode,
+            connectToExistingRoom: connectToExistingRoom,
+            disconnectFromRoom: disconnectFromRoom,
             getRoom: getRoom,
             getAreaRoomLookup: getAreaRoomLookup,
-            parseRoomCode: parseRoomCode
+            isRoomCode: isRoomCode,
+            parseRoomCode: parseRoomCode,
+            postRoom: postRoom
         };
     }]);

@@ -1,5 +1,6 @@
 div#AreaManager {
-    width: 30%;
+    min-width: 30%;
+    max-width: 50%
 }
 
 table.area_widget {

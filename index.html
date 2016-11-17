@@ -41,6 +41,13 @@
         <form ng-if="areaManager.current != null || newArea">
             <table class="room_widget">
                 <th colspan="2">Room Widget</th>
+
+                <tr>
+                    <td colspan="2">
+                        <label for="changeRoom">Select Room</label>
+                        <select name="changeRoom" ng-model="roomManager.roomChangeCode" ng-options="roomcode as roomname for (roomcode, roomname) in roomManager.nameLookup[roomManager.form.newExitArea]" ng-change="onRoomChange(roomManager.roomChangeCode);" />
+                    </td>
+                </tr>
                 <tr>
                     <td><label>Roomnumber</label></td>
                     <td ng-bind="roomManager.form.roomnumber"></td>
@@ -89,7 +96,7 @@
                                 </td>
                                 <td>
                                     <button ng-click="goToRoom(room.roomcode);">GO</button>
-                                    <button>-</button>
+                                    <button ng-click="removeExit(command, room.roomcode);">-</button>
                                 </td>
                             </tr>
                             <tr>
@@ -97,7 +104,7 @@
                                     <input type="text" ng-model="roomManager.form.newExitCommand">
                                 </td>
                                 <td>
-                                    <select ng-model="roomManager.form.newExitArea" ng-options="area.areacode as area.name for area in areas track by area.areacode" />
+                                    <select ng-model="roomManager.form.newExitArea" ng-options="area.areacode as (area.areacode + ' - ' + area.name) for area in areas track by area.areacode" />
                                 </td>
                                 <td>
                                     <select ng-disabled="roomManager.form.netExitArea != null" ng-model="roomManager.form.newExitRoom" ng-options="roomcode as roomname for (roomcode, roomname) in roomManager.nameLookup[roomManager.form.newExitArea]">
@@ -111,7 +118,11 @@
                         </table>
                     </td>
                 </tr>
-
+                <tr>
+                    <td colspan="2">
+                        <button ng-click="saveNewRoom();">Save</button>
+                    </td>
+                </tr>
             </table>
         </form>
     </div>

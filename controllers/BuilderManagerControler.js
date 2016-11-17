@@ -6,8 +6,11 @@ app.controller('BuilderManagerControler', function($scope, $http, RoomAPI) {
         form: {}
     };
     $scope.roomManager = {
-        current: null,
-        form: {},
+        current: {},
+        form: {
+            newExitArea: null,
+            newExitRoom: null
+        },
         nameLookup: {}
     };
     $scope.newArea = false;
@@ -26,6 +29,8 @@ app.controller('BuilderManagerControler', function($scope, $http, RoomAPI) {
         return new Promise(function(resolve, reject) {
             if (typeof(roomnumber) === 'undefined' || roomnumber === null) {
                 roomnumber = 1;
+            } else if (RoomAPI.isRoomCode(roomnumber)) {
+                roomnumber = RoomAPI.parseRoomCode(roomnumber).roomnumber;
             }
 
             RoomAPI.getRoom($scope.areaManager.current.areacode, roomnumber)
@@ -39,7 +44,17 @@ app.controller('BuilderManagerControler', function($scope, $http, RoomAPI) {
                     resolve();
                 });
         });
-    }
+    };
+
+    $scope.onNewRoom = function() {
+        return new Promise(function(resolve, reject) {
+            $scope.roomManager.current = {};
+            $scope.roomManager.form = {
+                newExitArea: null,
+                newExitRoom: null
+            }
+        });
+    };
 
     function updateAreaManagementForm() {
         $scope.areaManager.form.areacode = $scope.areaManager.current.areacode;
@@ -51,6 +66,8 @@ app.controller('BuilderManagerControler', function($scope, $http, RoomAPI) {
         $scope.roomManager.form.roomnumber = $scope.roomManager.current.roomnumber;
         $scope.roomManager.form.name = $scope.roomManager.current.name;
         $scope.roomManager.form.description = $scope.roomManager.current.description;
+
+        $scope.roomManager.form.newExitArea = $scope.areaLookup[$scope.roomManager.current.areacode].areacode;
 
         var exitDict = {};
         for (var command in $scope.roomManager.current.exits) {
@@ -105,19 +122,87 @@ app.controller('BuilderManagerControler', function($scope, $http, RoomAPI) {
     };
 
     $scope.addNewExit = function addNewExit() {
+        // Add new exit to display structures
         var newExit = {
             areacode: $scope.roomManager.form.newExitArea,
             roomcode: $scope.roomManager.form.newExitRoom,
             name: $scope.roomManager.nameLookup[$scope.roomManager.form.newExitArea][$scope.roomManager.form.newExitRoom]
         };
-        $scope.roomManager.form.exits[$scope.roomManager.form.newExitCommand] = newExit;
 
+        // Check for new room request
+        if ($scope.roomManager.form.newExitRoom === null) {
+            console.log('new room');
+
+            var oldRoomcode = RoomAPI.buildRoomCode($scope.areaManager.form.areacode, $scope.roomManager.form.roomnumber);
+            var oldCommand = $scope.roomManager.form.newExitCommand;
+            var newArea = $scope.roomManager.form.newExitArea;
+
+            // store old data
+            $scope.roomManager.newRoomConnectionMemory = {
+                oldRoomcode: oldRoomcode,
+                oldCommand: oldCommand
+            };
+
+            if (newArea != $scope.areaManager.current.areacode) {
+                $scope.areaManager.current = $scope.areaLookup[newArea];
+                $scope.onAreaChange();
+            }
+
+            $scope.onNewRoom();
+        } else {
+            // Link two existing rooms
+            var command = $scope.roomManager.form.newExitCommand;
+            var roomcode1 = RoomAPI.buildRoomCode($scope.areaManager.form.areacode, $scope.roomManager.form.roomnumber);
+            var roomcode2 = newExit.roomcode;
+
+            $scope.roomManager.form.exits[$scope.roomManager.form.newExitCommand] = newExit;
+            RoomAPI.connectToExistingRoom(command, roomcode1, roomcode2);
+        }
+
+        // Clean up the form
         $scope.roomManager.form.newExitCommand = null;
         $scope.roomManager.form.newExitArea = null;
         $scope.roomManager.form.newExitRoom = null;
+    };
 
-        // TODO: Add exit to DB and curate local data sets
-        // TODO: Add new room logic
+    $scope.saveNewRoom = function saveNewRoom() {
+        var areacode = $scope.areaManager.current.areacode;
+        var name = $scope.roomManager.form.name;
+        var description = $scope.roomManager.form.description;
+
+        var room = {
+            areacode: areacode,
+            name: name,
+            description: description
+        };
+
+        RoomAPI.postRoom(room).then(function(response) {
+            var newRoom = response.data;
+            var roomConnectionMemory = $scope.roomManager.newRoomConnectionMemory;
+            var newRoomcode = RoomAPI.buildRoomCode($scope.areaManager.current.areacode, newRoom.roomnumber);
+            $scope.roomManager.current = newRoom;
+            updateRoomManagementForm();
+
+            // connect old room
+            RoomAPI.connectToExistingRoom(roomConnectionMemory.oldCommand, roomConnectionMemory.oldRoomcode, newRoomcode);
+
+            // add new room to nameLookup
+            $scope.roomManager.nameLookup[$scope.areaManager.current.areacode][newRoomcode] = newRoom.roomnumber + ': ' + newRoom.name;
+        });
+    };
+
+    $scope.removeExit = function removeExit(command, removedRoomcode) {
+        var areacode = $scope.areaManager.current.areacode;
+        var roomnumber = $scope.roomManager.current.roomnumber;
+
+        RoomAPI.disconnectFromRoom(command, areacode, roomnumber);
+
+        // Remove the exit from the roomManager in current and form
+        delete $scope.roomManager.current.exits[command];
+        delete $scope.roomManager.form.exits[command];
+
+        // Automatically move the user to the removed room in case they need to disconnect from the other direction.
+        $scope.goToRoom(removedRoomcode);
     };
 
     $scope.goToRoom = function goToRoom(roomcode) {
