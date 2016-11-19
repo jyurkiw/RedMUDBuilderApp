@@ -34,6 +34,7 @@
                         <button ng-if="newArea" ng-click="addNewArea();">Add</button>
                         <button ng-if="areaManager.current != null && !newArea" ng-click="saveAreaChange();">Save</button>
                         <button ng-if="areaManager.current != null && !newArea" ng-click="deleteArea();">Delete</button>
+                        <button ng-click="test()">test</button>
                     </td>
                 </tr>
             </table>
@@ -45,7 +46,7 @@
                 <tr>
                     <td colspan="2">
                         <label for="changeRoom">Select Room</label>
-                        <select name="changeRoom" ng-model="roomManager.roomChangeCode" ng-options="roomcode as roomname for (roomcode, roomname) in roomManager.nameLookup[roomManager.form.newExitArea]" ng-change="onRoomChange(roomManager.roomChangeCode);" />
+                        <select name="changeRoom" ng-model="roomManager.roomChangeCode" ng-options="roomcode as roomname for (roomcode, roomname) in roomManager.nameLookup[areaManager.current.areacode]" ng-change="onRoomChange(roomManager.roomChangeCode);" />
                     </td>
                 </tr>
                 <tr>
@@ -99,7 +100,7 @@
                                     <button ng-click="removeExit(command, room.roomcode);">-</button>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr ng-if="!newRoom">
                                 <td>
                                     <input type="text" ng-model="roomManager.form.newExitCommand">
                                 </td>
@@ -120,7 +121,8 @@
                 </tr>
                 <tr>
                     <td colspan="2">
-                        <button ng-click="saveNewRoom();">Save</button>
+                        <button ng-if="newRoom" ng-click="saveNewRoom();">Save</button>
+                        <button ng-if="!newRoom" ng-click="updateRoom();">Save</button>
                     </td>
                 </tr>
             </table>

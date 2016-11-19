@@ -30,8 +30,16 @@ angular.module('RoomService', [])
             return $http.post('http://localhost:8080/api/room', room);
         }
 
+        function updateRoom(areacode, roomForm) {
+            var room = {
+                name: roomForm.name,
+                description: roomForm.description
+            };
+
+            return $http.put('http://localhost:8080/api/room/' + areacode + '/' + roomForm.roomnumber, room);
+        }
+
         function connectToExistingRoom(command, source, destination) {
-            console.log(command + ' ' + source + ' ' + destination);
             if (command === undefined) {
                 console.log("Need defined command");
                 throw "Need defined command";
@@ -62,7 +70,7 @@ angular.module('RoomService', [])
          * @returns True if the code is a room code.
          */
         function isRoomCode(code) {
-            if (code.substr(0, 2) === 'RM') return true;
+            if (typeof(code) === 'string' && code.substr(0, 2) === 'RM') return true;
             else return false;
         }
 
@@ -105,6 +113,7 @@ angular.module('RoomService', [])
             getAreaRoomLookup: getAreaRoomLookup,
             isRoomCode: isRoomCode,
             parseRoomCode: parseRoomCode,
-            postRoom: postRoom
+            postRoom: postRoom,
+            updateRoom: updateRoom
         };
     }]);
